@@ -2,7 +2,7 @@
 
 一个 WordPress 基础表单插件，可在网站控制面板管理网站
 
-![thumbnail](assets/images/thumbnail.png)
+![thumbnail](./assets/images/thumbnail.jpg)
 
 
 
