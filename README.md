@@ -5,6 +5,10 @@
 ![thumbnail](./assets/images/thumbnail.jpg)
 
 
+### 功能
+- 表单数据验证类
+- 提交次数限流
+- 嵌入后台管理面板
 
 ### 演示站点
 - http://javascript.net.cn

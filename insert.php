@@ -9,10 +9,21 @@
 // | Description: 
 // +----------------------------------------------------------------------
 
-session_start();
-if(!isset($_SESSION['submit_time'])){
-    $_SESSION['submit_time'] = time();
-}
+/* 数据库
+CREATE TABLE `my_form` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_name` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `mobile` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `content` text COLLATE utf8_unicode_ci,
+  `purpose` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `email` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `country` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `company` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `ip` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `create_time` datetime DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1298 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+*/
 
 // 初始化 wordpress 的一些全局设置
 require_once '../../../wp-load.php';
@@ -55,17 +66,16 @@ if (!$v->setRules($rule)->validate($_POST)) {
 }
 
 
-// 保存数据前限流
-if(!isset($_SESSION['submit_time'])){
+// 限流，检查一段时间内，如果提交过，禁止再次提交
+date_default_timezone_set('PRC');
+$ip = $_SERVER['REMOTE_ADDR'];
+$timeMark = time() - 60; //十分钟前的时间戳
+$timeStr = date("Y-m-d H:i:s", $timeMark);
+$sql = "SELECT * FROM my_form WHERE ip='$ip' AND create_time>'$timeStr'";
+$items = $wpdb->get_results($sql);
+if($items){
     $response['success'] = "false";
-    $response['msg'] = "客户端必须支持 COOKIE";
-    echo json_encode($response, JSON_UNESCAPED_UNICODE);
-    die();
-}
-
-if( (time() - $_SESSION['submit_time']) < 30){
-    $response['success'] = "false";
-    $response['msg'] = "已经添加过合作意向，请一小时以后再试";
+    $response['msg'] = "今天已经提交过了，请稍后再试";
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
     die();
 }
