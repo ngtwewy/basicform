@@ -29,13 +29,29 @@ CREATE TABLE `my_form` (
 require_once '../../../wp-load.php';
 wp(); // 这里产生的状态码是 404
 
+// 发送头信息
+header("Access-Control-Allow-Origin:*");
+header('Access-Control-Allow-Methods:POST'); 
+header("Content-Type:application/json; chartset=uft-8");
+Header("HTTP/1.1 200");
+
+// 限流，检查一段时间内，如果提交过，禁止再次提交
+date_default_timezone_set('PRC');
+$ip = $_SERVER['REMOTE_ADDR'];
+$timeMark = time() - 60; //十分钟前的时间戳
+$timeStr = date("Y-m-d H:i:s", $timeMark);
+$sql = "SELECT * FROM my_form WHERE ip='$ip' AND create_time>'$timeStr'";
+$items = $wpdb->get_results($sql);
+if($items){
+    $response['success'] = "false";
+    $response['msg'] = "今天已经提交过了，请稍后再试";
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    die();
+}
+
 // 加载我的插件
 define( 'MY__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 require_once MY__PLUGIN_DIR . "lib/Validator/Validator.php";
-
-// 发送头信息
-header("Content-Type:application/json; chartset=uft-8");
-Header("HTTP/1.1 200");
 
 // 返回数据
 $response['success'] = "false";
@@ -65,24 +81,10 @@ if (!$v->setRules($rule)->validate($_POST)) {
     die();
 }
 
-
-// 限流，检查一段时间内，如果提交过，禁止再次提交
-date_default_timezone_set('PRC');
-$ip = $_SERVER['REMOTE_ADDR'];
-$timeMark = time() - 60; //十分钟前的时间戳
-$timeStr = date("Y-m-d H:i:s", $timeMark);
-$sql = "SELECT * FROM my_form WHERE ip='$ip' AND create_time>'$timeStr'";
-$items = $wpdb->get_results($sql);
-if($items){
-    $response['success'] = "false";
-    $response['msg'] = "今天已经提交过了，请稍后再试";
-    echo json_encode($response, JSON_UNESCAPED_UNICODE);
-    die();
-}
-
 // 保存数据
 global $wpdb;
 $data = $v->getData();
+$data['ip'] = $ip;
 $data['create_time'] = date("Y-m-d H:i:s");
 $res = $wpdb->insert("my_form", $data);
 
